@@ -5,25 +5,26 @@ import cv2
 import albumentations as albu
 from albumentations.pytorch.transforms import ToTensorV2
 from torch.utils.data.distributed import DistributedSampler
+from os.path import splitext, basename
 
 class NormalDataset(Dataset):
-    def __init__(self,data_path,transform, mode = 'train', local_rank = 0, max_rank = 1):
+    def __init__(self, cfg, transform):
         
-        self.imgs_list=glob(data_path+"/image/*")
-        self.masks_list=glob(data_path+"/mask/*")
+        self.imgs_list=list(cfg.img_dir.glob('*'+cfg.img_ext))
+        self.masks_list=list(cfg.mask_dir.glob('*'+cfg.mask_ext))
         self.imgs_list.sort()
         self.masks_list.sort()
 
         self.transform=transform
 
-        self.mode = mode
+        self.mode = cfg.mode
 
-        if mode != 'train':
-            # In order to enable distributed inference across multiple GPUs
-            start_idx = (int)(local_rank * len(self.imgs_list) / max_rank)
-            end_idx = (int)(local_rank * len(self.imgs_list) / max_rank + len(self.imgs_list) / max_rank)
-            self.imgs_list = self.imgs_list[start_idx: end_idx]
-            self.masks_list = self.masks_list[start_idx: end_idx]
+        # if cfg.mode != 'train':
+        #     # In order to enable distributed inference across multiple GPUs
+        #     start_idx = (int)(local_rank * len(self.imgs_list) / max_rank)
+        #     end_idx = (int)(local_rank * len(self.imgs_list) / max_rank + len(self.imgs_list) / max_rank)
+        #     self.imgs_list = self.imgs_list[start_idx: end_idx]
+        #     self.masks_list = self.masks_list[start_idx: end_idx]
     
     def __len__(self):
         return len(self.imgs_list)
@@ -31,12 +32,12 @@ class NormalDataset(Dataset):
     
     def __getitem__(self,index):
         # to prevent '\' when using glob in Windows
-        img_dir= self.imgs_list[index] if not "\\" in self.imgs_list[index] else self.imgs_list[index]
-        mask_dir= self.masks_list[index] if not "\\" in self.masks_list[index] else self.masks_list[index]
+        img_dir= self.imgs_list[index]
+        mask_dir= self.masks_list[index]
 
         #print(img_dir, mask_dir)
 
-        mask_name = mask_dir.split("/")[-1]
+        mask_name = basename(mask_dir)
 
         img=cv2.imread(img_dir)
         img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
@@ -85,16 +86,19 @@ def get_augmentation(version=0, img_size = 512):
     return transforms
 
 
-def getSODDataloader(data_path, batch_size, num_workers, mode, local_rank = 0, max_rank = 1, img_size = 512):
-    if mode == "train":
+def getSODDataloader(cfg, img_size = 512):
+    batch_size = cfg.batch_size
+    num_workers = cfg.num_workers
+
+    if cfg.mode == "train":
         transform = get_augmentation(0, img_size)
-        dataset = NormalDataset(data_path + "/" + mode, transform, mode)
-        sampler = DistributedSampler(dataset)
-        dataLoader = DataLoader(dataset,batch_size = batch_size, sampler = sampler, num_workers = num_workers)
+        dataset = NormalDataset(cfg, transform)
+        # sampler = DistributedSampler(dataset)
+        dataLoader = DataLoader(dataset,batch_size = batch_size, num_workers = num_workers)
     else:
         transform = get_augmentation(1, img_size)
         # max_rank represents the number of GPUs used for inference
         # local_rank represents the GPU currently in use.
-        dataset = NormalDataset(data_path+ "/" + mode, transform, mode, local_rank, max_rank)
+        dataset = NormalDataset(cfg, transform)
         dataLoader = DataLoader(dataset, batch_size = batch_size, num_workers = num_workers)
     return dataLoader
