@@ -100,5 +100,5 @@ def getSODDataloader(cfg, img_size = 512):
         # max_rank represents the number of GPUs used for inference
         # local_rank represents the GPU currently in use.
         dataset = NormalDataset(cfg, transform)
-        dataLoader = DataLoader(dataset, batch_size = batch_size, num_workers = num_workers)
+        dataLoader = DataLoader(dataset, batch_size = 1, num_workers = num_workers)
     return dataLoader

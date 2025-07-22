@@ -269,7 +269,7 @@ if __name__ == "__main__":
         
         print("epochs {} start".format(i))
 
-        trainer(net, trainLoader, loss_func, optimizer)
+        # trainer(net, trainLoader, loss_func, optimizer)
 
         mae = valer(net, valLoader, i)
 
