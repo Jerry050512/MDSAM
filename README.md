@@ -1,3 +1,20 @@
+# MDSAM Test
+
+## Config
+
+Add new `config.py` file to control custom configs.
+
+## Scripts
+
+- `train.sh`: Train the model and upload the weights & results to the server, then shut down the server.
+
+
+
+
+
+
+
+
 <div align = 'center'>
 <h1>MDSAM</h1>
 <h3>Multi-Scale and Detail-Enhanced Segment Anything Model for Salient Object Detection</h3>

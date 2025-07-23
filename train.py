@@ -24,7 +24,7 @@ def parse_args():
         "--warmup_period", type = int, default = 5,    
     )
     parser.add_argument(
-        "--batch_size", type = int, default = 1,
+        "--batch_size", type = int, default = 8,
     )
     parser.add_argument(
         "--num_workers", type = int, default = 0
@@ -269,11 +269,13 @@ if __name__ == "__main__":
         
         print("epochs {} start".format(i))
 
-        # trainer(net, trainLoader, loss_func, optimizer)
+        trainer(net, trainLoader, loss_func, optimizer)
 
         mae = valer(net, valLoader, i)
 
         print("current mae:{}".format(mae))
+        with open(f"{args.save_root}/mae.log", "a+") as f:
+            f.write(f"epoch:{i}, mae:{mae}\n")
         rm_epoch = i
         #save the best result
         if mae < best_mae:
@@ -288,4 +290,14 @@ if __name__ == "__main__":
         args.ckpt_root.mkdir(parents=True, exist_ok=True)
         torch.save({"model": net.state_dict(),"optimizer":optimizer.state_dict()}, "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, i))
         print("best epoch:{}, mae:{}".format(best_epoch,best_mae))
-        
+
+    with open(f"{args.save_root}/mae.log", "a+") as f:
+        f.write(f"\nbest epoch:{best_epoch}, mae:{best_mae}\n")
+    
+    best_ckpt_path = "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, best_epoch)
+    save_root_path = "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, best_epoch)
+    shutil.move(best_ckpt_path, save_root_path)
+
+    print("Best epoch checkpoint moved to: {}".format(save_root_path))
+    print("Training Done!")
+
