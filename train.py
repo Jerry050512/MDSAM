@@ -42,7 +42,7 @@ def parse_args():
         "--data_path", type = str, default='./datasets/DUTS', help="the postfix must to be DUTS"
     )
     parser.add_argument(
-        "--sam_ckpt", type = str
+        "--sam_ckpt", type = str, default='./pretrained/sam_vit_b_01ec64.pth'
     )
     parser.add_argument(
         "--save_dir", type = str, default = './output'
@@ -195,7 +195,7 @@ if __name__ == "__main__":
 
     #Model definition and loading SAM pre-trained weights
     net = MDSAM(args.img_size).to(device)
-    if args.resume != "":
+    if args.resume == "":
         state = load(net, args.sam_ckpt, args.img_size)
         print(state)
 
