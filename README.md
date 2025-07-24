@@ -8,11 +8,11 @@ Add new `config.py` file to control custom configs.
 
 - `train.sh`: Train the model and upload the weights & results to the server, then shut down the server.
 
+## Implemetation Details
 
-
-
-
-
+- input image size: 384x384
+- batch size: 16 (32 in original paper)
+- learning rate: 5e-4 * .5 (Adjust according to batch size)
 
 
 <div align = 'center'>
