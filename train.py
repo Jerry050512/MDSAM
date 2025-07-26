@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
     print("start training, batch_size: {}, lr_rate: {}, warmup_period: {}, save to {}".format(args.batch_size, args.lr_rate, args.warmup_period, args.ckpt_root))
     torch.manual_seed(args.seed)
-    device = torch.device(f"cuda:{args.gpu_id}")
+    device = torch.device(f"cuda:{args.gpu_id}" if torch.cuda.is_available() else "cpu")
 
     #Model definition and loading SAM pre-trained weights
     net = MDSAM(args.img_size).to(device)
