@@ -10,9 +10,9 @@ class Config:
                 img_ext='.jpg',
                 mask_ext='.png',
                 cuda_num=1,
-                dataset_root=Path('../datasets/'),
-                ckpt_root = Path('/hy-tmp/ckpt'),
-                save_root = Path('/hy-tmp/output'),
+                dataset_root=Path('/kaggle/temp/datasets'),
+                ckpt_root = Path('/kaggle/working/ckpt'),
+                save_root = Path('/kaggle/working/output'),
                 opt=None,
                 **kwargs
             ):
