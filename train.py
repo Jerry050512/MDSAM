@@ -295,7 +295,7 @@ if __name__ == "__main__":
         f.write(f"\nbest epoch:{best_epoch}, mae:{best_mae}\n")
     
     best_ckpt_path = "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, best_epoch)
-    save_root_path = "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, best_epoch)
+    save_root_path = "{}/{}-{}.pth".format(args.save_root, args.model_code, best_epoch)
     shutil.move(best_ckpt_path, save_root_path)
 
     print("Best epoch checkpoint moved to: {}".format(save_root_path))

@@ -11,7 +11,7 @@ class Config:
                 mask_ext='.png',
                 cuda_num=1,
                 dataset_root=Path('/kaggle/temp/datasets'),
-                ckpt_root = Path('/kaggle/working/ckpt'),
+                ckpt_root = Path('/kaggle/temp/ckpt'),
                 save_root = Path('/kaggle/working/output'),
                 opt=None,
                 **kwargs
