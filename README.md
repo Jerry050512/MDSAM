@@ -6,6 +6,13 @@ Add new `config.py` file to control custom configs.
 
 ## Scripts
 
+Note. we use `expect` to automate the oss login process, so you need to set up the oss login first.
+```
+sudo apt-get install expect
+```
+
+And add `OSS_PASSWORD` to `.env` file.
+
 - `train.sh`: Train the model and upload the weights & results to the server, then shut down the server.
 
 ## Implemetation Details

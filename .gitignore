@@ -2,3 +2,6 @@ __pycache__/
 pretrained/
 output/
 ckpt/
+
+# Ignore environment files containing secrets
+.env
