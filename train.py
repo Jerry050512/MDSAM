@@ -97,8 +97,11 @@ def main(args):
             loss.backward()
             optimizer.step()
 
-            if (index + 1) % 100 == 0:
+            if (index + 1) % 10 == 0:
                 print("[epoch: %d/%d, batch: %d/%d] train loss: %.4f" % 
+                (epoch, args.epochs, (index + 1) * args.batch_size, len(dataloader_train.dataset), loss.item()))
+                
+        print("[epoch: %d/%d, batch: %d/%d] train loss: %.4f" % 
                 (epoch, args.epochs, (index + 1) * args.batch_size, len(dataloader_train.dataset), loss.item()))
 
         # testing

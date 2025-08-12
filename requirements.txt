@@ -2,3 +2,5 @@ numpy
 opencv-python
 albumentations
 tqdm
+tensorboard
+matplotlib
