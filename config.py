@@ -11,8 +11,8 @@ class Config:
                 mask_ext='.png',
                 cuda_num=1,
                 dataset_root=Path('../datasets/'),
-                ckpt_root = Path('/hy-tmp/ckpt'),
-                save_root = Path('/hy-tmp/output'),
+                ckpt_root = Path('./ckpt'),
+                save_root = Path('./output'),
                 opt=None,
                 **kwargs
             ):

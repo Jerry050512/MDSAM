@@ -10,8 +10,8 @@ import torch.nn.functional as F
 
 from typing import Optional, Tuple, Type
 
-from .common import LayerNorm2d, MLPBlock
 from .block import LMSA
+from .common import LayerNorm2d, MLPBlock
 
 
 # This class and its supporting functions below lightly adapted from the ViTDet backbone available at: https://github.com/facebookresearch/detectron2/blob/main/detectron2/modeling/backbone/vit.py # noqa
@@ -71,8 +71,6 @@ class ImageEncoderViT(nn.Module):
             )
 
         self.blocks = nn.ModuleList()
-
-        require_adaptere = [0,1,2,3,4,5,6,7,8,9,10,11]#[0, 2, 3, 5, 6, 8, 9, 11]
         for i in range(depth):
             block = Block(
                 dim=embed_dim,
@@ -85,46 +83,38 @@ class ImageEncoderViT(nn.Module):
                 rel_pos_zero_init=rel_pos_zero_init,
                 window_size=window_size if i not in global_attn_indexes else 0,
                 input_size=(img_size // patch_size, img_size // patch_size),
-                require_adapter=(i in require_adaptere)
             )
             self.blocks.append(block)
 
-        self.neck = nn.ModuleList()
-        for i in range(4):
-            self.neck.append(nn.Sequential(
-                    nn.Conv2d(
-                        embed_dim,
-                        out_chans,
-                        kernel_size=1,
-                        bias=False,
-                    ),
-                    LayerNorm2d(out_chans),
-                    nn.Conv2d(
-                        out_chans,
-                        out_chans,
-                        kernel_size=3,
-                        padding=1,
-                        bias=False,
-                    ),
-                    LayerNorm2d(out_chans),
-                )
-            )
+        self.neck = nn.Sequential(
+            nn.Conv2d(
+                embed_dim,
+                out_chans,
+                kernel_size=1,
+                bias=False,
+            ),
+            LayerNorm2d(out_chans),
+            nn.Conv2d(
+                out_chans,
+                out_chans,
+                kernel_size=3,
+                padding=1,
+                bias=False,
+            ),
+            LayerNorm2d(out_chans),
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.patch_embed(x)
         if self.pos_embed is not None:
             x = x + self.pos_embed
 
-        req_list = [2,5,8,11]
-        features_list = []
-        for i, blk in enumerate(self.blocks):
+        for blk in self.blocks:
             x = blk(x)
-            if i in req_list:
-                features_list.append(self.neck[req_list.index(i)](x.permute(0, 3, 1, 2)))
-        
-        #x = self.neck(x.permute(0, 3, 1, 2))
 
-        return features_list
+        x = self.neck(x.permute(0, 3, 1, 2))
+
+        return x
 
 
 class Block(nn.Module):
@@ -142,7 +132,7 @@ class Block(nn.Module):
         rel_pos_zero_init: bool = True,
         window_size: int = 0,
         input_size: Optional[Tuple[int, int]] = None,
-        require_adapter: bool = False
+        require_adapter: bool=True
     ) -> None:
         """
         Args:
@@ -160,14 +150,14 @@ class Block(nn.Module):
                 positional parameter size.
         """
         super().__init__()
-        self.norm1 = norm_layer(dim)
         self.require_adapter = require_adapter
-        # Define LMSA
         if require_adapter:
             self.adapter = LMSA(dim, dim // 3, input_size[0])
+
+        self.norm1 = norm_layer(dim)
         self.attn = Attention(
             dim,
-            num_heads=num_heads, 
+            num_heads=num_heads,
             qkv_bias=qkv_bias,
             use_rel_pos=use_rel_pos,
             rel_pos_zero_init=rel_pos_zero_init,
@@ -180,7 +170,6 @@ class Block(nn.Module):
         self.window_size = window_size
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # add LMSA in here
         if self.require_adapter:
             x = self.adapter(x)
         shortcut = x
@@ -199,6 +188,7 @@ class Block(nn.Module):
         x = x + self.mlp(self.norm2(x))
 
         return x
+
 
 class Attention(nn.Module):
     """Multi-head Attention block with relative position embeddings."""
@@ -228,9 +218,6 @@ class Attention(nn.Module):
         self.scale = head_dim**-0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-
-        #self.lora = LoRA(dim, dim // 4)
-
         self.proj = nn.Linear(dim, dim)
 
         self.use_rel_pos = use_rel_pos
@@ -245,9 +232,7 @@ class Attention(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, H, W, _ = x.shape
         # qkv with shape (3, B, nHead, H * W, C)
-        qkv = self.qkv(x)
-        #qkv = self.lora(x, qkv)
-        qkv = qkv.reshape(B, H * W, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
+        qkv = self.qkv(x).reshape(B, H * W, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
         # q, k, v with shape (B * nHead, H * W, C)
         q, k, v = qkv.reshape(3, B * self.num_heads, H * W, -1).unbind(0)
 

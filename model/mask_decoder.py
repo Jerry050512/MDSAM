@@ -19,9 +19,7 @@ class MaskDecoder(nn.Module):
         *,
         transformer_dim: int,
         transformer: nn.Module,
-        activation: Type[nn.Module] = nn.GELU,
-        norm : Type[nn.Module] = nn.BatchNorm2d,
-        act : Type[nn.Module] = nn.GELU
+        activation: Type[nn.Module] = nn.GELU
     ) -> None:
         """
         Predicts masks given an image and prompt embeddings, using a
@@ -53,14 +51,12 @@ class MaskDecoder(nn.Module):
             nn.ConvTranspose2d(transformer_dim // 4, transformer_dim // 8, kernel_size=2, stride=2),
             activation(),
         )
-        #self.no_mask_embed = nn.Embedding(1, 256)
-
         self.output_hypernetworks_mlps = MLP(transformer_dim, transformer_dim, transformer_dim // 8, 3)
 
     def forward(
         self,
         image_embeddings: torch.Tensor,
-        image_pe: torch.Tensor,
+        image_pe: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Predict masks given image and prompt embeddings.
@@ -82,40 +78,33 @@ class MaskDecoder(nn.Module):
             image_pe=image_pe
         )
 
-        # Select the correct mask or masks for output
-
         # Prepare output
         return masks
 
     def predict_masks(
         self,
         image_embeddings: torch.Tensor,
-        image_pe: torch.Tensor,
+        image_pe: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Predicts masks. See 'forward' for more details."""
         # Concatenate output tokens
         output_tokens = torch.cat([self.iou_token.weight, self.mask_tokens.weight], dim=0)
-        output_tokens = output_tokens.unsqueeze(0).expand(image_embeddings.shape[0],-1,-1)
+        output_tokens = output_tokens.unsqueeze(0).expand(image_embeddings.size(0), -1, -1)
 
-        src = image_embeddings# + prompt_token# + prompt_token
-        pos_src = image_pe
-        b, c, h, w = src.shape
+        b, c, h, w = image_embeddings.shape
 
         # Run the transformer
-        hs, src = self.transformer(src, pos_src, output_tokens)
-
-        hs = output_tokens[:,1:,:]
-
-        hs = self.output_hypernetworks_mlps(hs)
+        hs, src = self.transformer(image_embeddings, image_pe, output_tokens)
+        mask_tokens_out = hs[:,1:,:]
+        hyper = self.output_hypernetworks_mlps(mask_tokens_out)
 
         # Upscale mask embeddings and predict masks using the mask tokens
-        src = src.transpose(1, 2).view(b, c, h, w).contiguous()
+        src = src.transpose(1, 2).view(b, c, h, w)
         upscaled_embedding = self.output_upscaling(src)
-
         b, c, h, w = upscaled_embedding.shape
+        mask = (hyper @ upscaled_embedding.view(b, c, h * w)).view(b, -1, h, w)
 
-        masks = (hs @ upscaled_embedding.view(b, c, h * w)).view(b, -1, h, w)
-        return masks, upscaled_embedding
+        return mask
 
 
 # Lightly adapted from

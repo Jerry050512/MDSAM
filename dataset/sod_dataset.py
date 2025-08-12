@@ -7,7 +7,7 @@ from albumentations.pytorch.transforms import ToTensorV2
 from torch.utils.data.distributed import DistributedSampler
 from os.path import splitext, basename
 
-class NormalDataset(Dataset):
+class DefectDataset(Dataset):
     def __init__(self, cfg, transform):
         
         self.imgs_list=list(cfg.img_dir.glob('*'+cfg.img_ext))
@@ -86,19 +86,19 @@ def get_augmentation(version=0, img_size = 512):
     return transforms
 
 
-def getSODDataloader(cfg, img_size = 512):
+def getDefectDataloader(cfg, img_size = 512):
     batch_size = cfg.batch_size
     num_workers = cfg.num_workers
 
     if cfg.mode == "train":
         transform = get_augmentation(0, img_size)
-        dataset = NormalDataset(cfg, transform)
+        dataset = DefectDataset(cfg, transform)
         # sampler = DistributedSampler(dataset)
         dataLoader = DataLoader(dataset,batch_size = batch_size, num_workers = num_workers)
     else:
         transform = get_augmentation(1, img_size)
         # max_rank represents the number of GPUs used for inference
         # local_rank represents the GPU currently in use.
-        dataset = NormalDataset(cfg, transform)
+        dataset = DefectDataset(cfg, transform)
         dataLoader = DataLoader(dataset, batch_size = 1, num_workers = num_workers)
     return dataLoader
