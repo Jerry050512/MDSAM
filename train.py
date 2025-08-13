@@ -131,16 +131,16 @@ def main(args):
         print("save epoch {} in {}".format(epoch, "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, epoch)))
         args.ckpt_root.mkdir(parents=True, exist_ok=True)
         torch.save({"model": net.state_dict(),"optimizer":optimizer.state_dict()}, "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, epoch))
-        print("best epoch: {}, best score: {}".format(best_epoch, best_score))
+    print("best epoch: {}, best score: {}".format(best_epoch, best_score))
 
-        with open(f"{args.save_root}/mae.log", "a+") as f:
-            f.write(f"\nbest epoch: {best_epoch}, mae: {best_score}\n")
-        
-        best_ckpt_path = "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, best_epoch)
-        save_root_path = "{}/{}-{}.pth".format(args.save_root, args.model_code, best_epoch)
-        shutil.move(best_ckpt_path, save_root_path)
+    with open(f"{args.save_root}/mae.log", "a+") as f:
+        f.write(f"\nbest epoch: {best_epoch}, mae: {best_score}\n")
+    
+    best_ckpt_path = "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, best_epoch)
+    save_root_path = "{}/{}-{}.pth".format(args.save_root, args.model_code, best_epoch)
+    shutil.move(best_ckpt_path, save_root_path)
 
-        print("Best epoch checkpoint moved to: {}".format(save_root_path))
+    print("Best epoch checkpoint moved to: {}".format(save_root_path))
 
     print("------- Training Done -------")
 
