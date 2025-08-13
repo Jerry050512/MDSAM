@@ -1,13 +1,11 @@
-import os
-import cv2
 import torch
-import numpy as np
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
 from collections import OrderedDict
-from matplotlib.backends.backend_pdf import PdfPages
 
 def reshapePos(pos_embed, img_size):
+    """
+    Reshape the positional embedding for a different image size.
+    """
     token_size = int(img_size // 16)
     if pos_embed.shape[1] != token_size:
         # resize pos embedding
@@ -17,6 +15,9 @@ def reshapePos(pos_embed, img_size):
     return pos_embed
 
 def reshapeRel(k, rel_pos_params, img_size):
+    """
+    Reshape the relative positional parameters for a different image size.
+    """
     if not ('2' in k or '5' in  k or '8' in k or '11' in k):
         return rel_pos_params
     
@@ -27,6 +28,10 @@ def reshapeRel(k, rel_pos_params, img_size):
     return rel_pos_params[0, 0, ...]
 
 def load_sam(net, sam_pre, img_size):
+    """
+    Load weights from a pretrained SAM model into the DefectSAM model.
+    This function handles reshaping of positional embeddings.
+    """
     state_dict = torch.load(sam_pre)
     dict_filtered = OrderedDict()
 
@@ -50,16 +55,3 @@ def load_sam(net, sam_pre, img_size):
     load_info = net.load_state_dict(dict_filtered, strict=False)
 
     return load_info
-
-def LossFunc(pred, mask):
-    mask=mask.float()
-    bce = F.binary_cross_entropy(pred, mask, reduce=None)
-
-    inter = ((pred * mask)).sum(dim=(2, 3))
-    union = ((pred + mask)).sum(dim=(2, 3))
-    aiou = 1 - (inter + 1) / (union - inter + 1)
-
-    mae = F.l1_loss(pred, mask, reduce=None)
-
-    return (bce + aiou + mae).mean()
-
