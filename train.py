@@ -118,12 +118,14 @@ def main(args):
         print("current score: {}".format(current_score))
         with open(f"{args.save_root}/score.log", "a+") as f:
             f.write(f"epoch: {epoch}, current score: {current_score}\n")
+            f.write(f"MAE: {score['MAE']}, F: {score['F']}, S: {score['S']}\n")
         rm_epoch = epoch
         #save the best result
         if current_score > best_score:
             best_score = current_score
             rm_epoch = best_epoch
             best_epoch = epoch
+        print(f"Best score: {best_score} at epoch {best_epoch}")
         pred_dir_to_remove = test_cfg.save_root / f"{test_cfg.model_code}-{rm_epoch}"
         if pred_dir_to_remove.exists():
             shutil.rmtree(pred_dir_to_remove)
@@ -133,8 +135,8 @@ def main(args):
         torch.save({"model": net.state_dict(),"optimizer":optimizer.state_dict()}, "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, epoch))
     print("best epoch: {}, best score: {}".format(best_epoch, best_score))
 
-    with open(f"{args.save_root}/mae.log", "a+") as f:
-        f.write(f"\nbest epoch: {best_epoch}, mae: {best_score}\n")
+    with open(f"{args.save_root}/score.log", "a+") as f:
+        f.write(f"\nbest epoch: {best_epoch}, score: {best_score}\n")
     
     best_ckpt_path = "{}/{}-{}.pth".format(args.ckpt_root, args.model_code, best_epoch)
     save_root_path = "{}/{}-{}.pth".format(args.save_root, args.model_code, best_epoch)
@@ -143,8 +145,6 @@ def main(args):
     print("Best epoch checkpoint moved to: {}".format(save_root_path))
 
     print("------- Training Done -------")
-
-    return
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()

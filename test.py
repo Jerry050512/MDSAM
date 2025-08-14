@@ -44,7 +44,7 @@ def test(net, args, epoch=0):
         mask_name = data['mask_name'][0]
         
         out= net(img)
-        out = sigmoid(out)
+        # out = sigmoid(out)
         out = torch.nn.functional.interpolate(out, [ori_label.shape[1],ori_label.shape[2]], mode = 'bilinear', align_corners = False)
 
         pred = (out.detach().squeeze().cpu().numpy() * 255).astype(np.uint8)
